@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>セットアップガイド - 暗号資産アドバイザー</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+
+        h2 {
+            color: #333;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            font-size: 24px;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning strong {
+            color: #dc2626;
+        }
+
+        .info {
+            background: #e0e7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .success {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        pre {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: #f3f4f6;
+        }
+
+        ul, ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .step {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .feature-desc {
+            font-size: 14px;
+            color: #666;
+        }
+
+        a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 10px 10px 10px 0;
+            transition: transform 0.2s;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+        .tech-badge {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #667eea;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 4px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 暗号資産アドバイザー</h1>
+        <p class="subtitle">コインチェック連携PWAアプリ - セットアップガイド</p>
+
+        <div class="success">
+            <strong>✅ アプリの作成が完了しました!</strong><br>
+            投資初心者でも使いやすいUI/UXで、テクニカル分析に基づく売買推奨を提供します。
+        </div>
+
+        <h2>🎯 主な機能</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <div class="feature-title">リアルタイム価格</div>
+                <div class="feature-desc">1分ごとに最新価格を自動取得</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <div class="feature-title">プッシュ通知</div>
+                <div class="feature-desc">重要なシグナル発生時に通知</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <div class="feature-title">テクニカル分析</div>
+                <div class="feature-desc">RSI・移動平均・MACDを自動計算</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <div class="feature-title">PWA対応</div>
+                <div class="feature-desc">ホーム画面に追加可能</div>
+            </div>
+        </div>
+
+        <h2>🚀 セットアップ方法</h2>
+
+        <div class="step">
+            <h3><span class="step-number">1</span>ファイルの配置</h3>
+            <p>ダウンロードしたフォルダには以下のファイルが含まれています:</p>
+            <ul>
+                <li><code>index.html</code> - メインのHTMLファイル</li>
+                <li><code>app.js</code> - アプリケーションロジック</li>
+                <li><code>service-worker.js</code> - PWA用のService Worker</li>
+                <li><code>manifest.json</code> - PWAマニフェスト</li>
+                <li><code>README.md</code> - 詳細なドキュメント</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span>ローカルサーバーの起動</h3>
+            <p>PWAの機能を使うには、Webサーバーでホストする必要があります。</p>
+            
+            <h4>方法A: Python を使う場合</h4>
+            <pre><code>cd crypto-advisor
+python3 -m http.server 8000</code></pre>
+
+            <h4>方法B: Node.js を使う場合</h4>
+            <pre><code>cd crypto-advisor
+npx http-server -p 8000</code></pre>
+
+            <h4>方法C: Visual Studio Code の Live Server</h4>
+            <ol>
+                <li>VS Codeで <code>crypto-advisor</code> フォルダを開く</li>
+                <li><code>index.html</code> を右クリック</li>
+                <li>"Open with Live Server" を選択</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span>ブラウザでアクセス</h3>
+            <p>ブラウザで以下のURLを開きます:</p>
+            <pre><code>http://localhost:8000</code></pre>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">4</span>スマホでアクセス (オプション)</h3>
+            <p>スマートフォンで使用する場合:</p>
+            <ol>
+                <li>PCとスマホを同じWi-Fiネットワークに接続</li>
+                <li>PCのローカルIPアドレスを確認
+                    <ul>
+                        <li>Windows: <code>ipconfig</code></li>
+                        <li>Mac/Linux: <code>ifconfig</code></li>
+                    </ul>
+                </li>
+                <li>スマホのブラウザで <code>http://[PCのIP]:8000</code> を開く</li>
+                <li>ホーム画面に追加してPWAとして使用</li>
+            </ol>
+        </div>
+
+        <h2>📱 使い方</h2>
+
+        <div class="info">
+            <h4>基本操作</h4>
+            <ol>
+                <li><strong>通貨ペアを選択</strong>: ビットコイン、イーサリアムなどから選択</li>
+                <li><strong>価格を確認</strong>: リアルタイムで更新される現在価格をチェック</li>
+                <li><strong>シグナルを確認</strong>: 買い/売り/様子見の推奨を確認</li>
+                <li><strong>通知を有効化</strong>: 重要なシグナル時に通知を受け取る</li>
+            </ol>
+        </div>
+
+        <h3>テクニカル指標の見方</h3>
+        <ul>
+            <li><strong>RSI (相対力指数)</strong>
+                <ul>
+                    <li>30以下: 売られすぎ → 買い検討</li>
+                    <li>70以上: 買われすぎ → 売り検討</li>
+                </ul>
+            </li>
+            <li><strong>移動平均線</strong>
+                <ul>
+                    <li>短期 > 長期: 上昇トレンド</li>
+                    <li>短期 < 長期: 下降トレンド</li>
+                </ul>
+            </li>
+            <li><strong>MACD</strong>
+                <ul>
+                    <li>プラス圏: 買いの勢い</li>
+                    <li>マイナス圏: 売りの勢い</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>⚠️ 重要な注意事項</h2>
+
+        <div class="warning">
+            <strong>免責事項</strong><br>
+            <ul>
+                <li>このアプリは<strong>教育・デモ目的</strong>で作成されています</li>
+                <li>表示される推奨は参考情報であり、<strong>投資助言ではありません</strong></li>
+                <li>実際の投資判断は<strong>必ずご自身の責任</strong>で行ってください</li>
+                <li>暗号資産投資には<strong>価格変動リスク</strong>があります</li>
+                <li>過去の分析結果は未来を保証するものではありません</li>
+            </ul>
+        </div>
+
+        <h2>🔧 技術仕様</h2>
+        <div class="tech-badge">HTML5</div>
+        <div class="tech-badge">CSS3</div>
+        <div class="tech-badge">JavaScript ES6+</div>
+        <div class="tech-badge">PWA</div>
+        <div class="tech-badge">Service Worker</div>
+        <div class="tech-badge">Notification API</div>
+        <div class="tech-badge">Fetch API</div>
+
+        <h3>使用API</h3>
+        <ul>
+            <li><strong>コインチェック パブリックAPI</strong>
+                <ul>
+                    <li>エンドポイント: <code>https://coincheck.com/api/ticker</code></li>
+                    <li>認証不要 (APIキー不要)</li>
+                    <li>レート制限: 推奨1秒に1回まで</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>🌐 本番環境へのデプロイ</h2>
+        <p>以下のサービスで簡単にホスティングできます:</p>
+        <ul>
+            <li><strong>Vercel</strong>: <a href="https://vercel.com" target="_blank">vercel.com</a> (無料プラン有り)</li>
+            <li><strong>Netlify</strong>: <a href="https://netlify.com" target="_blank">netlify.com</a> (無料プラン有り)</li>
+            <li><strong>GitHub Pages</strong>: <a href="https://pages.github.com" target="_blank">pages.github.com</a> (無料)</li>
+        </ul>
+
+        <div class="info">
+            <strong>💡 ヒント:</strong> 本番環境では必ずHTTPSを使用してください。PWAの多くの機能(通知、Service Workerなど)にはHTTPSが必要です。
+        </div>
+
+        <h2>📚 参考資料</h2>
+        <ul>
+            <li><a href="https://coincheck.com/ja/documents/api" target="_blank">コインチェック API ドキュメント</a></li>
+            <li><code>README.md</code> - より詳細な技術情報</li>
+        </ul>
+
+        <h2>🎓 学習リソース</h2>
+        <p>テクニカル分析について学びたい方におすすめ:</p>
+        <ul>
+            <li>RSI (相対力指数)の基本</li>
+            <li>移動平均線を使ったトレンド分析</li>
+            <li>MACDの見方と使い方</li>
+            <li>暗号資産投資の基礎知識</li>
+        </ul>
+
+        <div class="success">
+            <strong>✨ 楽しい投資学習を!</strong><br>
+            このアプリを使って、テクニカル分析の基本を学びながら、暗号資産市場の動きを観察してみてください。実際の投資を始める前に、十分な知識と経験を積むことをお勧めします。
+        </div>
+    </div>
+</body>
+</html>

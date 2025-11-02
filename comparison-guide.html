@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>どちらのアプリを使うべき？ - 完全ガイド</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 36px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .app-card {
+            border: 3px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 30px;
+            background: #f9fafb;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .app-card.beginner {
+            border-color: #667eea;
+        }
+
+        .app-card.advanced {
+            border-color: #10b981;
+        }
+
+        .app-icon {
+            font-size: 64px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .app-card.beginner .app-title {
+            color: #667eea;
+        }
+
+        .app-card.advanced .app-title {
+            color: #10b981;
+        }
+
+        .app-subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .feature-list li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .recommended-for {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .recommended-for h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .recommended-for ul {
+            margin-left: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .recommended-for li {
+            margin-bottom: 5px;
+        }
+
+        .download-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .app-card.beginner .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .app-card.advanced .download-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .comparison-table th {
+            background: #f9fafb;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table .label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .comparison-table .beginner-col {
+            background: #ede9fe;
+        }
+
+        .comparison-table .advanced-col {
+            background: #d1fae5;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .warning-box h3 {
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+
+        .warning-box p {
+            color: #78350f;
+            line-height: 1.8;
+        }
+
+        .decision-flow {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .decision-flow h3 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .flow-step {
+            background: white;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .flow-step h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .flow-answer {
+            margin-left: 20px;
+            color: #666;
+        }
+
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 どちらのアプリを使うべき？</h1>
+        <p class="subtitle">あなたの投資スタイルに合わせて選びましょう</p>
+
+        <div class="comparison-grid">
+            <!-- 長期投資版 -->
+            <div class="app-card beginner">
+                <div class="app-icon">💰</div>
+                <h2 class="app-title">暗号資産アドバイザー</h2>
+                <p class="app-subtitle">長期・スイングトレード向け</p>
+
+                <div class="recommended-for">
+                    <h4>👤 おすすめの方</h4>
+                    <ul>
+                        <li>暗号資産投資の初心者</li>
+                        <li>じっくり長期保有したい方</li>
+                        <li>毎日チャートを見る時間がない方</li>
+                        <li>リスクを抑えたい方</li>
+                    </ul>
+                </div>
+
+                <ul class="feature-list">
+                    <li>1分ごとの自動更新</li>
+                    <li>長期トレンド分析（7日/25日移動平均）</li>
+                    <li>初心者向けのシンプルなUI</li>
+                    <li>わかりやすい売買推奨</li>
+                    <li>プッシュ通知機能</li>
+                </ul>
+
+                <a href="../crypto-advisor/index.html" class="download-btn">📥 このアプリを開く</a>
+            </div>
+
+            <!-- デイトレード版 -->
+            <div class="app-card advanced">
+                <div class="app-icon">⚡</div>
+                <h2 class="app-title">デイトレードアドバイザー</h2>
+                <p class="app-subtitle">短期・デイトレード向け</p>
+
+                <div class="recommended-for">
+                    <h4>👤 おすすめの方</h4>
+                    <ul>
+                        <li>デイトレードの経験者</li>
+                        <li>短期売買で利益を狙いたい方</li>
+                        <li>リアルタイムでチャートを見られる方</li>
+                        <li>高リスク・高リターンを理解している方</li>
+                    </ul>
+                </div>
+
+                <ul class="feature-list">
+                    <li>5秒ごとのリアルタイム更新</li>
+                    <li>短期トレンド分析（5期間/20期間移動平均）</li>
+                    <li>価格チャート・板情報表示</li>
+                    <li>価格アラート機能</li>
+                    <li>損益計算機能</li>
+                    <li>ボリンジャーバンド表示</li>
+                </ul>
+
+                <a href="../crypto-daytrading/index.html" class="download-btn">📥 このアプリを開く</a>
+            </div>
+        </div>
+
+        <h2 style="color: #333; margin-bottom: 20px; text-align: center;">📊 詳細比較表</h2>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th class="label">項目</th>
+                    <th class="beginner-col">💰 長期投資版</th>
+                    <th class="advanced-col">⚡ デイトレード版</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="label">更新頻度</td>
+                    <td class="beginner-col">1分ごと</td>
+                    <td class="advanced-col">5秒ごと</td>
+                </tr>
+                <tr>
+                    <td class="label">対象期間</td>
+                    <td class="beginner-col">数日〜数ヶ月</td>
+                    <td class="advanced-col">数時間〜1日</td>
+                </tr>
+                <tr>
+                    <td class="label">RSI期間</td>
+                    <td class="beginner-col">14期間（標準）</td>
+                    <td class="advanced-col">14期間（短期最適化）</td>
+                </tr>
+                <tr>
+                    <td class="label">移動平均</td>
+                    <td class="beginner-col">7日/25日</td>
+                    <td class="advanced-col">5期間/20期間</td>
+                </tr>
+                <tr>
+                    <td class="label">チャート表示</td>
+                    <td class="beginner-col">なし</td>
+                    <td class="advanced-col">あり（1分/5分/15分/1時間足）</td>
+                </tr>
+                <tr>
+                    <td class="label">板情報</td>
+                    <td class="beginner-col">なし</td>
+                    <td class="advanced-col">あり</td>
+                </tr>
+                <tr>
+                    <td class="label">価格アラート</td>
+                    <td class="beginner-col">なし</td>
+                    <td class="advanced-col">あり</td>
+                </tr>
+                <tr>
+                    <td class="label">損益計算</td>
+                    <td class="beginner-col">なし</td>
+                    <td class="advanced-col">あり</td>
+                </tr>
+                <tr>
+                    <td class="label">難易度</td>
+                    <td class="beginner-col">初級〜中級</td>
+                    <td class="advanced-col">中級〜上級</td>
+                </tr>
+                <tr>
+                    <td class="label">リスク</td>
+                    <td class="beginner-col">中リスク</td>
+                    <td class="advanced-col">高リスク</td>
+                </tr>
+                <tr>
+                    <td class="label">必要時間</td>
+                    <td class="beginner-col">1日5〜10分</td>
+                    <td class="advanced-col">常時監視</td>
+                </tr>
+                <tr>
+                    <td class="label">推奨資金</td>
+                    <td class="beginner-col">5万円〜</td>
+                    <td class="advanced-col">10万円〜</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="decision-flow">
+            <h3>🤔 診断：あなたに合うのはどっち？</h3>
+            
+            <div class="flow-step">
+                <h4>Q1. 暗号資産の投資経験は？</h4>
+                <div class="flow-answer">
+                    ✅ 初めて → <span class="highlight">長期投資版</span><br>
+                    ✅ 半年以上ある → どちらでもOK<br>
+                    ✅ 1年以上ある → <span class="highlight">デイトレード版</span>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <h4>Q2. チャートを見る時間は？</h4>
+                <div class="flow-answer">
+                    ✅ 1日5〜10分程度 → <span class="highlight">長期投資版</span><br>
+                    ✅ 1日1〜2時間 → どちらでもOK<br>
+                    ✅ 常時見られる → <span class="highlight">デイトレード版</span>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <h4>Q3. リスク許容度は？</h4>
+                <div class="flow-answer">
+                    ✅ 低リスクが良い → <span class="highlight">長期投資版</span><br>
+                    ✅ 中リスク可 → どちらでもOK<br>
+                    ✅ 高リスクOK → <span class="highlight">デイトレード版</span>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <h4>Q4. 目標利益は？</h4>
+                <div class="flow-answer">
+                    ✅ 年10〜30% → <span class="highlight">長期投資版</span><br>
+                    ✅ 月10〜20% → どちらでもOK<br>
+                    ✅ 日5〜10% → <span class="highlight">デイトレード版</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <h3>⚠️ 非常に重要な注意事項</h3>
+            <p>
+                <strong>デイトレードは上級者向けの投資手法です。</strong>以下の点を必ず理解してください：
+            </p>
+            <ul style="margin-top: 10px; margin-left: 20px;">
+                <li>短期売買は損失リスクが非常に高い</li>
+                <li>手数料負担が大きくなる</li>
+                <li>精神的なストレスが大きい</li>
+                <li>大半のデイトレーダーは損失を出している</li>
+                <li>生活資金では絶対に取引しない</li>
+            </ul>
+            <p style="margin-top: 15px;">
+                <strong>初心者の方は、必ず「長期投資版」から始めてください。</strong>
+                最低でも3〜6ヶ月の経験を積んでから、デイトレード版に挑戦することをおすすめします。
+            </p>
+        </div>
+
+        <div style="background: #e0e7ff; border-radius: 12px; padding: 30px; margin-top: 30px;">
+            <h3 style="color: #3730a3; margin-bottom: 15px; text-align: center;">💡 おすすめの使い方</h3>
+            <div style="color: #3730a3; line-height: 1.8;">
+                <strong>初心者の方：</strong><br>
+                1. まず「長期投資版」で暗号資産の基礎を学ぶ（3〜6ヶ月）<br>
+                2. 少額で実際に投資してみる（1〜5万円程度）<br>
+                3. テクニカル分析の本を2〜3冊読む<br>
+                4. 自信がついたら「デイトレード版」を試す（デモから）<br><br>
+
+                <strong>経験者の方：</strong><br>
+                1. 長期保有は「長期投資版」で管理<br>
+                2. 短期売買は「デイトレード版」で管理<br>
+                3. 両方を使い分けてリスク分散<br>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
+            <p style="color: #666; margin-bottom: 20px;">
+                どちらのアプリも完全無料・APIキー不要で使えます
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 600px; margin: 0 auto;">
+                <a href="../crypto-advisor/index.html" style="display: block; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 700;">
+                    💰 長期投資版を開く
+                </a>
+                <a href="../crypto-daytrading/index.html" style="display: block; padding: 15px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 700;">
+                    ⚡ デイトレード版を開く
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

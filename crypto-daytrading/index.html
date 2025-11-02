@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#10b981">
+    <title>デイトレードアドバイザー - コインチェック</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            padding: 12px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .header .subtitle {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+
+        .card {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #334155;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .price-display {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .current-price {
+            font-size: 32px;
+            font-weight: 700;
+            color: #10b981;
+            margin-bottom: 8px;
+        }
+
+        .price-change {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .price-change.positive {
+            color: #10b981;
+        }
+
+        .price-change.negative {
+            color: #ef4444;
+        }
+
+        .crypto-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .crypto-btn {
+            padding: 12px;
+            background: #334155;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            color: #f1f5f9;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .crypto-btn:hover {
+            background: #475569;
+        }
+
+        .crypto-btn.active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-color: #10b981;
+        }
+
+        .timeframe-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .timeframe-btn {
+            flex: 1;
+            padding: 8px;
+            background: #334155;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            color: #f1f5f9;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timeframe-btn:hover {
+            background: #475569;
+        }
+
+        .timeframe-btn.active {
+            background: #10b981;
+            border-color: #10b981;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 16px;
+        }
+
+        .indicator-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .indicator-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .indicator-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .indicator-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .indicator-status {
+            font-size: 11px;
+            margin-top: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .indicator-status.buy {
+            background: #065f46;
+            color: #10b981;
+        }
+
+        .indicator-status.sell {
+            background: #7f1d1d;
+            color: #ef4444;
+        }
+
+        .indicator-status.neutral {
+            background: #1e3a8a;
+            color: #60a5fa;
+        }
+
+        .signal-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .signal-badge {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .signal-badge.buy {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .signal-badge.sell {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .signal-badge.hold {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .signal-strength {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .strength-bar {
+            width: 40px;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        .strength-bar.active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .signal-description {
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+
+        .orderbook {
+            margin-bottom: 16px;
+        }
+
+        .orderbook-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            padding: 8px;
+            font-size: 12px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .orderbook-row:first-child {
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .buy-order {
+            color: #10b981;
+        }
+
+        .sell-order {
+            color: #ef4444;
+        }
+
+        .alert-section {
+            margin-bottom: 16px;
+        }
+
+        .alert-input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .alert-input {
+            flex: 1;
+            padding: 10px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #f1f5f9;
+            font-size: 14px;
+        }
+
+        .alert-input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: #f1f5f9;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .alert-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .alert-item button {
+            padding: 4px 12px;
+            background: #7f1d1d;
+            color: #ef4444;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .pnl-calculator {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .pnl-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #334155;
+        }
+
+        .pnl-row:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .pnl-label {
+            color: #94a3b8;
+        }
+
+        .pnl-value {
+            font-weight: 600;
+        }
+
+        .pnl-positive {
+            color: #10b981;
+        }
+
+        .pnl-negative {
+            color: #ef4444;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: #ef4444;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .update-time {
+            font-size: 11px;
+            color: #64748b;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .disclaimer {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+            font-size: 11px;
+            color: #fca5a5;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .current-price {
+                font-size: 24px;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+
+            .indicator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚡ デイトレードアドバイザー</h1>
+            <p class="subtitle">短期投資向け - リアルタイム分析</p>
+        </div>
+
+        <div class="grid">
+            <!-- Left Column -->
+            <div>
+                <!-- Price Display -->
+                <div class="card">
+                    <div class="crypto-selector">
+                        <button class="crypto-btn active" data-pair="btc_jpy">BTC/JPY</button>
+                        <button class="crypto-btn" data-pair="eth_jpy">ETH/JPY</button>
+                        <button class="crypto-btn" data-pair="xrp_jpy">XRP/JPY</button>
+                        <button class="crypto-btn" data-pair="ltc_jpy">LTC/JPY</button>
+                    </div>
+
+                    <div class="price-display">
+                        <div class="status-indicator">
+                            <div class="status-dot" id="statusDot"></div>
+                            <span id="statusText">接続中...</span>
+                        </div>
+                        <div class="current-price" id="currentPrice">---</div>
+                        <div class="price-change" id="priceChange">
+                            <span>---</span>
+                        </div>
+                        <div class="update-time" id="updateTime">最終更新: ---</div>
+                    </div>
+
+                    <div class="quick-stats">
+                        <div class="stat-card">
+                            <div class="stat-label">24h高値</div>
+                            <div class="stat-value" id="high24h">---</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">24h安値</div>
+                            <div class="stat-value" id="low24h">---</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">出来高</div>
+                            <div class="stat-value" id="volume24h">---</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">価格チャート</div>
+                    </div>
+
+                    <div class="timeframe-selector">
+                        <button class="timeframe-btn" data-timeframe="1m">1分</button>
+                        <button class="timeframe-btn active" data-timeframe="5m">5分</button>
+                        <button class="timeframe-btn" data-timeframe="15m">15分</button>
+                        <button class="timeframe-btn" data-timeframe="1h">1時間</button>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Technical Indicators -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">テクニカル指標</div>
+                    </div>
+
+                    <div class="indicator-grid">
+                        <div class="indicator-card">
+                            <div class="indicator-label">RSI (14)</div>
+                            <div class="indicator-value" id="rsiValue">---</div>
+                            <div class="indicator-status" id="rsiStatus">計算中</div>
+                        </div>
+
+                        <div class="indicator-card">
+                            <div class="indicator-label">ボリンジャー</div>
+                            <div class="indicator-value" id="bbValue">---</div>
+                            <div class="indicator-status" id="bbStatus">計算中</div>
+                        </div>
+
+                        <div class="indicator-card">
+                            <div class="indicator-label">移動平均 (5)</div>
+                            <div class="indicator-value" id="sma5Value">---</div>
+                            <div class="indicator-status" id="sma5Status">計算中</div>
+                        </div>
+
+                        <div class="indicator-card">
+                            <div class="indicator-label">移動平均 (20)</div>
+                            <div class="indicator-value" id="sma20Value">---</div>
+                            <div class="indicator-status" id="sma20Status">計算中</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div>
+                <!-- Signal -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">売買シグナル</div>
+                    </div>
+
+                    <div class="signal-card">
+                        <div class="signal-badge hold" id="signalBadge">分析中</div>
+                        <div class="signal-strength" id="signalStrength">
+                            <div class="strength-bar"></div>
+                            <div class="strength-bar"></div>
+                            <div class="strength-bar"></div>
+                            <div class="strength-bar"></div>
+                            <div class="strength-bar"></div>
+                        </div>
+                        <div class="signal-description" id="signalDescription">
+                            データを分析中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Book -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">板情報</div>
+                    </div>
+
+                    <div class="orderbook" id="orderbook">
+                        <div class="orderbook-row">
+                            <div>価格</div>
+                            <div>数量</div>
+                            <div>累積</div>
+                        </div>
+                        <div style="text-align: center; padding: 20px; color: #64748b;">
+                            読み込み中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Alert -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">価格アラート</div>
+                    </div>
+
+                    <div class="alert-section">
+                        <div class="alert-input-group">
+                            <input type="number" class="alert-input" id="alertPrice" placeholder="価格を入力">
+                            <button class="btn btn-primary" id="addAlertBtn">追加</button>
+                        </div>
+                        <div class="alert-list" id="alertList">
+                            <div style="text-align: center; padding: 12px; color: #64748b; font-size: 13px;">
+                                アラートはまだ設定されていません
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- P&L Calculator -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">損益計算</div>
+                    </div>
+
+                    <div class="pnl-calculator">
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">エントリー価格</label>
+                            <input type="number" class="alert-input" id="entryPrice" placeholder="購入価格">
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">数量</label>
+                            <input type="number" class="alert-input" id="quantity" placeholder="数量" step="0.001">
+                        </div>
+                        <div id="pnlResult">
+                            <div class="pnl-row">
+                                <span class="pnl-label">現在価格</span>
+                                <span class="pnl-value" id="pnlCurrentPrice">---</span>
+                            </div>
+                            <div class="pnl-row">
+                                <span class="pnl-label">損益額</span>
+                                <span class="pnl-value" id="pnlAmount">---</span>
+                            </div>
+                            <div class="pnl-row">
+                                <span class="pnl-label">損益率</span>
+                                <span class="pnl-value" id="pnlPercent">---</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="refreshBtn">🔄 更新</button>
+                    <button class="btn btn-secondary" id="historyBtn">📊 履歴</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            <strong>⚠️ 重要:</strong> このアプリはデモ・教育目的です。デイトレードは高リスクです。表示される情報は参考情報であり、投資助言ではありません。実際の取引は自己責任で行ってください。
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

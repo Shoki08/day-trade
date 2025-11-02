@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="コインチェック連携の暗号資産売買サポートアプリ。初心者向け長期投資版とデイトレード版の2種類。">
+    <title>暗号資産トレードアドバイザー | コインチェック連携</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 60px;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .hero .subtitle {
+            font-size: 24px;
+            opacity: 0.95;
+            margin-bottom: 30px;
+        }
+
+        .hero .description {
+            font-size: 16px;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .app-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+        }
+
+        .app-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .app-card.advanced::before {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .app-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .app-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .badge.beginner {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge.advanced {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .features {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+
+        .features li {
+            padding: 10px 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .features li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .cta-button {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .app-card.advanced .cta-button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .app-card.advanced .cta-button:hover {
+            box-shadow: 0 6px 30px rgba(16, 185, 129, 0.5);
+        }
+
+        .comparison-section {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .comparison-section h2 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .comparison-section p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .comparison-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: white;
+            color: #667eea;
+            border: 3px solid #667eea;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .comparison-button:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .footer {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .footer h3 {
+            color: #dc2626;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .footer p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .footer .links {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .footer .links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 0 15px;
+        }
+
+        .footer .links a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .hero .subtitle {
+                font-size: 18px;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .app-card {
+                padding: 30px;
+            }
+
+            .icon {
+                font-size: 60px;
+            }
+
+            .app-title {
+                font-size: 24px;
+            }
+
+            .comparison-section {
+                padding: 30px 20px;
+            }
+
+            .comparison-section h2 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero">
+            <h1>🎯 暗号資産トレードアドバイザー</h1>
+            <p class="subtitle">コインチェック連携 - 投資スタイル別アプリ</p>
+            <p class="description">
+                テクニカル分析に基づく売買推奨を提供する2種類のPWAアプリ。<br>
+                初心者向け長期投資版と、経験者向けデイトレード版からお選びいただけます。
+            </p>
+        </div>
+
+        <!-- App Cards -->
+        <div class="cards-grid">
+            <!-- 長期投資版 -->
+            <div class="app-card">
+                <div class="icon">💰</div>
+                <span class="badge beginner">初心者向け</span>
+                <h2 class="app-title">長期投資版</h2>
+                <p class="app-subtitle">じっくり資産を育てる</p>
+                
+                <ul class="features">
+                    <li>1分ごとの自動更新</li>
+                    <li>シンプルで分かりやすいUI</li>
+                    <li>長期トレンド分析</li>
+                    <li>プッシュ通知対応</li>
+                    <li>初心者でも安心</li>
+                </ul>
+
+                <a href="crypto-advisor/index.html" class="cta-button">
+                    🚀 長期投資版を開く
+                </a>
+            </div>
+
+            <!-- デイトレード版 -->
+            <div class="app-card advanced">
+                <div class="icon">⚡</div>
+                <span class="badge advanced">経験者向け</span>
+                <h2 class="app-title">デイトレード版</h2>
+                <p class="app-subtitle">短期で利益を狙う</p>
+                
+                <ul class="features">
+                    <li>5秒ごとの高速更新</li>
+                    <li>リアルタイムチャート表示</li>
+                    <li>板情報・価格アラート</li>
+                    <li>損益計算機能</li>
+                    <li>高機能トレーディング</li>
+                </ul>
+
+                <a href="crypto-daytrading/index.html" class="cta-button">
+                    ⚡ デイトレード版を開く
+                </a>
+            </div>
+        </div>
+
+        <!-- Comparison Section -->
+        <div class="comparison-section">
+            <h2>🤔 どちらを選べばいい？</h2>
+            <p>
+                投資経験やライフスタイルに合わせて最適なアプリを選択できます。<br>
+                初めての方は長期投資版から始めることをおすすめします。
+            </p>
+            <a href="comparison-guide.html" class="comparison-button">
+                📊 詳しい比較ガイドを見る
+            </a>
+        </div>
+
+        <!-- Footer / Disclaimer -->
+        <div class="footer">
+            <h3>⚠️ 重要な注意事項</h3>
+            <p>
+                これらのアプリは<strong>教育・デモ目的</strong>で作成されています。<br>
+                表示される情報は参考情報であり、投資助言ではありません。<br>
+                実際の投資判断は必ずご自身の責任で行ってください。<br>
+                暗号資産投資には価格変動リスクがあり、元本を失う可能性があります。
+            </p>
+            
+            <div class="links">
+                <a href="https://github.com/yourusername/crypto-advisor" target="_blank">GitHub</a>
+                <a href="crypto-advisor/README.md">長期投資版ドキュメント</a>
+                <a href="crypto-daytrading/README.md">デイトレード版ドキュメント</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
