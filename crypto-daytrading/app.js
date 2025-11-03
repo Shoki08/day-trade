@@ -1,24 +1,47 @@
 // Configuration
 const CONFIG = {
     API_BASE: 'https://coincheck.com/api',
-    // CORSプロキシを使用（本番環境では独自プロキシを推奨）
-    CORS_PROXY: 'https://api.allorigins.win/raw?url=',
+    // 複数のCORSプロキシを用意
+    CORS_PROXIES: [
+        'https://api.allorigins.win/raw?url=',
+        'https://corsproxy.io/?',
+        'https://api.codetabs.com/v1/proxy?quest='
+    ],
     REFRESH_INTERVAL: 5000, // 5秒 (デイトレード向け)
     CHART_POINTS: 100,
     ORDERBOOK_DEPTH: 5,
-    USE_CORS_PROXY: true, // CORSエラー対策
-    DEMO_MODE: false // デモモード（APIエラー時に自動的にON）
+    USE_CORS_PROXY: false, // まず直接アクセスを試みる
+    DEMO_MODE: false,
+    RETRY_ATTEMPTS: 3,
+    RETRY_DELAY: 1000
 };
 
 // State
 let currentPair = 'btc_jpy';
 let currentTimeframe = '5m';
+let currentTab = 'overview';
 let priceHistory = [];
 let candleData = [];
 let lastPrice = null;
 let chart = null;
 let priceAlerts = [];
 let updateInterval = null;
+let currentProxyIndex = 0;
+let apiFailCount = 0;
+
+// All supported pairs
+const ALL_PAIRS = [
+    'btc_jpy', 'eth_jpy', 'xrp_jpy', 'shib_jpy', 'pepe_jpy', 'matic_jpy',
+    'link_jpy', 'dot_jpy', 'avax_jpy', 'sand_jpy', 'mana_jpy', 'axs_jpy',
+    'enj_jpy', 'imx_jpy', 'ape_jpy', 'chz_jpy', 'ltc_jpy', 'bch_jpy',
+    'etc_jpy', 'xlm_jpy', 'xem_jpy', 'lsk_jpy', 'bat_jpy', 'iost_jpy',
+    'qtum_jpy', 'fnct_jpy', 'grt_jpy', 'mask_jpy', 'mona_jpy', 'wbtc_jpy',
+    'fpl_jpy', 'doge_jpy', 'bril_jpy'
+];
+
+let allCurrenciesData = {};
+let allCurrenciesHistory = {};
+let overviewUpdateInterval = null;
 
 // DOM Elements
 const elements = {
@@ -63,10 +86,25 @@ function init() {
     setupEventListeners();
     loadSettings();
     initChart();
-    startDataFetching();
+    
+    // Start with overview tab
+    if (currentTab === 'overview') {
+        fetchAllCurrencies();
+        overviewUpdateInterval = setInterval(fetchAllCurrencies, CONFIG.REFRESH_INTERVAL * 2); // 10秒ごと
+    } else {
+        startDataFetching();
+    }
 }
 
 function setupEventListeners() {
+    // Tab navigation
+    document.querySelectorAll('.tab-nav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const tab = e.target.dataset.tab;
+            switchTab(tab);
+        });
+    });
+
     // Crypto selector
     elements.cryptoBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -99,14 +137,92 @@ function setupEventListeners() {
     elements.entryPrice.addEventListener('input', calculatePnL);
     elements.quantity.addEventListener('input', calculatePnL);
 
-    // Refresh button
+    // Refresh buttons
     elements.refreshBtn.addEventListener('click', () => {
         fetchData();
         fetchOrderBook();
     });
 
+    const refreshOverviewBtn = document.getElementById('refreshOverviewBtn');
+    if (refreshOverviewBtn) {
+        refreshOverviewBtn.addEventListener('click', () => {
+            refreshOverviewBtn.disabled = true;
+            refreshOverviewBtn.textContent = '🔄 分析中...';
+            fetchAllCurrencies().finally(() => {
+                refreshOverviewBtn.disabled = false;
+                refreshOverviewBtn.textContent = '🔄 全通貨を再分析';
+            });
+        });
+    }
+
     // History button
     elements.historyBtn.addEventListener('click', showHistory);
+
+    // Recommendation item click
+    document.addEventListener('click', (e) => {
+        const item = e.target.closest('.recommendation-item-overview');
+        if (item && item.dataset.pair) {
+            currentPair = item.dataset.pair;
+            switchTab('individual');
+            // Update select
+            elements.cryptoBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.pair === currentPair);
+            });
+            priceHistory = [];
+            candleData = [];
+            fetchData();
+        }
+    });
+}
+
+function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update tab buttons
+    document.querySelectorAll('.tab-nav-btn').forEach(btn => {
+        const isActive = btn.dataset.tab === tab;
+        btn.classList.toggle('active', isActive);
+        if (isActive) {
+            btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            btn.style.color = 'white';
+        } else {
+            btn.style.background = '#334155';
+            btn.style.color = '#f1f5f9';
+        }
+    });
+    
+    // Update content visibility
+    const overviewContent = document.getElementById('overviewContent');
+    const individualContent = document.getElementById('individualContent');
+    
+    if (tab === 'overview') {
+        overviewContent.style.display = 'block';
+        individualContent.style.display = 'none';
+        
+        // Clear individual interval
+        if (updateInterval) {
+            clearInterval(updateInterval);
+            updateInterval = null;
+        }
+        
+        // Start overview updates
+        fetchAllCurrencies();
+        if (!overviewUpdateInterval) {
+            overviewUpdateInterval = setInterval(fetchAllCurrencies, CONFIG.REFRESH_INTERVAL * 2);
+        }
+    } else {
+        overviewContent.style.display = 'none';
+        individualContent.style.display = 'block';
+        
+        // Clear overview interval
+        if (overviewUpdateInterval) {
+            clearInterval(overviewUpdateInterval);
+            overviewUpdateInterval = null;
+        }
+        
+        // Start individual updates
+        startDataFetching();
+    }
 }
 
 function startDataFetching() {
@@ -121,6 +237,68 @@ function startDataFetching() {
         fetchData();
         fetchOrderBook();
     }, CONFIG.REFRESH_INTERVAL);
+}
+
+async function fetchWithRetry(url, retries = CONFIG.RETRY_ATTEMPTS) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            // First try: Direct API access
+            if (!CONFIG.USE_CORS_PROXY && i === 0) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                        },
+                        mode: 'cors'
+                    });
+                    
+                    if (response.ok) {
+                        apiFailCount = 0;
+                        const data = await response.json();
+                        return data;
+                    }
+                } catch (directError) {
+                    console.log('Direct API failed, trying with proxy...');
+                    CONFIG.USE_CORS_PROXY = true;
+                }
+            }
+            
+            // Try with CORS proxy
+            if (CONFIG.USE_CORS_PROXY) {
+                const proxy = CONFIG.CORS_PROXIES[currentProxyIndex];
+                const proxyUrl = `${proxy}${encodeURIComponent(url)}`;
+                
+                const response = await fetch(proxyUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    apiFailCount = 0;
+                    const data = await response.json();
+                    return data;
+                }
+                
+                // Try next proxy
+                currentProxyIndex = (currentProxyIndex + 1) % CONFIG.CORS_PROXIES.length;
+            }
+            
+        } catch (error) {
+            console.error(`Fetch attempt ${i + 1} failed:`, error);
+            
+            if (i < retries - 1) {
+                // Wait before retry
+                await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY * (i + 1)));
+            }
+        }
+    }
+    
+    // All retries failed
+    apiFailCount++;
+    throw new Error('API request failed after all retries');
 }
 
 async function fetchData() {
@@ -163,21 +341,19 @@ async function fetchData() {
     } catch (error) {
         console.error('Fetch error:', error);
         updateStatus('disconnected');
+        
+        // Switch to demo mode if too many failures
+        if (apiFailCount > 5 && !CONFIG.DEMO_MODE) {
+            CONFIG.DEMO_MODE = true;
+            showDemoModeWarning();
+        }
     }
 }
 
 async function fetchTicker(pair) {
     try {
-        let url = `${CONFIG.API_BASE}/ticker?pair=${pair}`;
-        
-        // CORSプロキシを使用
-        if (CONFIG.USE_CORS_PROXY) {
-            url = `${CONFIG.CORS_PROXY}${encodeURIComponent(url)}`;
-        }
-        
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('API request failed');
-        const data = await response.json();
+        const url = `${CONFIG.API_BASE}/ticker?pair=${pair}`;
+        const data = await fetchWithRetry(url);
         
         // データ検証
         if (!data || !data.last) {
@@ -186,11 +362,11 @@ async function fetchTicker(pair) {
         
         return data;
     } catch (error) {
-        console.error('Fetch error:', error);
+        console.error('Fetch ticker error:', error);
         
         // デモモードに切り替え
         if (!CONFIG.DEMO_MODE) {
-            console.warn('Switching to DEMO MODE due to API error');
+            console.warn('Switching to DEMO MODE');
             CONFIG.DEMO_MODE = true;
             showDemoModeWarning();
         }
@@ -200,57 +376,24 @@ async function fetchTicker(pair) {
     }
 }
 
-// デモデータ生成
+// Demo data generation
 function generateDemoData(pair) {
     const basePrice = {
-        // 主要通貨
-        'btc_jpy': 8500000,
-        'eth_jpy': 450000,
-        'xrp_jpy': 95,
-        
-        // 人気アルトコイン
-        'shib_jpy': 0.003,
-        'pepe_jpy': 0.0015,
-        'matic_jpy': 120,
-        'link_jpy': 2800,
-        'dot_jpy': 1200,
-        'avax_jpy': 6500,
-        
-        // DeFi・NFT関連
-        'sand_jpy': 85,
-        'mana_jpy': 75,
-        'axs_jpy': 1200,
-        'enj_jpy': 68,
-        'imx_jpy': 350,
-        'ape_jpy': 280,
-        'chz_jpy': 18,
-        
-        // 主要アルトコイン
-        'ltc_jpy': 12000,
-        'bch_jpy': 65000,
-        'etc_jpy': 4500,
-        'xlm_jpy': 19,
-        'xem_jpy': 8.5,
-        'lsk_jpy': 185,
-        
-        // DeFi・取引所トークン
-        'bat_jpy': 42,
-        'iost_jpy': 1.8,
-        'qtum_jpy': 550,
-        'fnct_jpy': 35,
-        'grt_jpy': 38,
-        'mask_jpy': 620,
-        
-        // その他
-        'mona_jpy': 95,
-        'wbtc_jpy': 8500000,
-        'fpl_jpy': 8.2,
-        'doge_jpy': 22,
-        'bril_jpy': 145
+        'btc_jpy': 8500000, 'eth_jpy': 450000, 'xrp_jpy': 95,
+        'shib_jpy': 0.003, 'pepe_jpy': 0.0015, 'matic_jpy': 120,
+        'link_jpy': 2800, 'dot_jpy': 1200, 'avax_jpy': 6500,
+        'sand_jpy': 85, 'mana_jpy': 75, 'axs_jpy': 1200,
+        'enj_jpy': 68, 'imx_jpy': 350, 'ape_jpy': 280, 'chz_jpy': 18,
+        'ltc_jpy': 12000, 'bch_jpy': 65000, 'etc_jpy': 4500,
+        'xlm_jpy': 19, 'xem_jpy': 8.5, 'lsk_jpy': 185,
+        'bat_jpy': 42, 'iost_jpy': 1.8, 'qtum_jpy': 550,
+        'fnct_jpy': 35, 'grt_jpy': 38, 'mask_jpy': 620,
+        'mona_jpy': 95, 'wbtc_jpy': 8500000, 'fpl_jpy': 8.2,
+        'doge_jpy': 22, 'bril_jpy': 145
     };
     
     const base = basePrice[pair] || 1000;
-    const variation = base * 0.02; // ±2%の変動
+    const variation = base * 0.02;
     const price = base + (Math.random() - 0.5) * variation;
     
     return {
@@ -264,23 +407,14 @@ function generateDemoData(pair) {
     };
 }
 
-// デモモード警告を表示
 function showDemoModeWarning() {
     const warning = document.createElement('div');
     warning.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        color: white;
-        padding: 16px 24px;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-        z-index: 10000;
-        font-weight: 600;
-        max-width: 90%;
-        text-align: center;
+        color: white; padding: 16px 24px; border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 10000;
+        font-weight: 600; max-width: 90%; text-align: center;
     `;
     warning.innerHTML = `
         ⚠️ デモモード<br>
@@ -290,7 +424,6 @@ function showDemoModeWarning() {
     `;
     document.body.appendChild(warning);
     
-    // 5秒後に削除
     setTimeout(() => {
         warning.style.transition = 'opacity 0.5s';
         warning.style.opacity = '0';
@@ -300,22 +433,11 @@ function showDemoModeWarning() {
 
 async function fetchOrderBook() {
     try {
-        let url = `${CONFIG.API_BASE}/order_books?pair=${currentPair}`;
-        
-        // CORSプロキシを使用
-        if (CONFIG.USE_CORS_PROXY) {
-            url = `${CONFIG.CORS_PROXY}${encodeURIComponent(url)}`;
-        }
-        
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Order book request failed');
-        const data = await response.json();
-        
+        const url = `${CONFIG.API_BASE}/order_books?pair=${currentPair}`;
+        const data = await fetchWithRetry(url);
         displayOrderBook(data);
     } catch (error) {
         console.error('Order book error:', error);
-        
-        // デモ板情報を表示
         if (CONFIG.DEMO_MODE) {
             displayOrderBook(generateDemoOrderBook());
         } else {
@@ -324,20 +446,17 @@ async function fetchOrderBook() {
     }
 }
 
-// デモ板情報生成
 function generateDemoOrderBook() {
     const basePrice = lastPrice || 8500000;
     const asks = [];
     const bids = [];
     
-    // 売り板（現在価格より高い）
     for (let i = 0; i < 10; i++) {
         const price = basePrice * (1 + (i + 1) * 0.001);
         const amount = Math.random() * 0.5 + 0.1;
         asks.push([price.toString(), amount.toString()]);
     }
     
-    // 買い板（現在価格より低い）
     for (let i = 0; i < 10; i++) {
         const price = basePrice * (1 - (i + 1) * 0.001);
         const amount = Math.random() * 0.5 + 0.1;
@@ -347,13 +466,10 @@ function generateDemoOrderBook() {
     return { asks, bids };
 }
 
-// 板情報エラー表示
 function displayOrderBookError() {
     elements.orderbook.innerHTML = `
         <div class="orderbook-row">
-            <div>価格</div>
-            <div>数量</div>
-            <div>累積</div>
+            <div>価格</div><div>数量</div><div>累積</div>
         </div>
         <div style="text-align: center; padding: 20px; color: #ef4444;">
             板情報の取得に失敗しました
@@ -364,22 +480,30 @@ function displayOrderBookError() {
 function updateStatus(status) {
     const statusMap = {
         connecting: { dot: 'offline', text: '接続中...' },
-        connected: { dot: '', text: CONFIG.DEMO_MODE ? 'デモモード（リアルタイム更新中）' : 'リアルタイム更新中' },
+        connected: { dot: '', text: CONFIG.DEMO_MODE ? 'デモモード（更新中）' : 'リアルタイム更新中' },
         disconnected: { dot: 'offline', text: '接続エラー' }
     };
     
     const s = statusMap[status];
-    elements.statusDot.className = `status-dot ${s.dot}`;
-    elements.statusText.textContent = s.text;
+    if (elements.statusDot) {
+        elements.statusDot.className = `status-dot ${s.dot}`;
+        elements.statusText.textContent = s.text;
+    }
+    
+    // Update overview status too
+    const statusDotOverview = document.getElementById('statusDotOverview');
+    const statusTextOverview = document.getElementById('statusTextOverview');
+    if (statusDotOverview && statusTextOverview) {
+        statusDotOverview.className = `status-dot ${s.dot}`;
+        statusTextOverview.textContent = s.text;
+    }
 }
 
 function updatePriceDisplay(ticker) {
     const price = parseFloat(ticker.last);
     
-    // Current price
     elements.currentPrice.textContent = formatPrice(price, currentPair);
     
-    // Price change
     if (lastPrice !== null) {
         const change = price - lastPrice;
         const changePercent = ((change / lastPrice) * 100).toFixed(2);
@@ -393,32 +517,24 @@ function updatePriceDisplay(ticker) {
         `;
     }
     
-    // 24h stats
     elements.high24h.textContent = formatPrice(parseFloat(ticker.high), currentPair);
     elements.low24h.textContent = formatPrice(parseFloat(ticker.low), currentPair);
     elements.volume24h.textContent = parseFloat(ticker.volume).toFixed(2);
     
-    // Update time
     const now = new Date();
     elements.updateTime.textContent = `最終更新: ${now.toLocaleTimeString('ja-JP')}`;
 }
 
 function formatPrice(price, pair) {
-    // 価格の大きさに応じてフォーマット
     if (price >= 100000) {
-        // 10万円以上（BTC, ETH, BCH, WBTCなど）
         return `¥${price.toLocaleString('ja-JP', { maximumFractionDigits: 0 })}`;
     } else if (price >= 1000) {
-        // 1000円以上（多くのアルトコイン）
         return `¥${price.toLocaleString('ja-JP', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
     } else if (price >= 10) {
-        // 10円以上
         return `¥${price.toLocaleString('ja-JP', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     } else if (price >= 0.01) {
-        // 0.01円以上
         return `¥${price.toFixed(4)}`;
     } else {
-        // 0.01円未満（SHIB, PEPEなど）
         return `¥${price.toFixed(6)}`;
     }
 }
@@ -443,14 +559,9 @@ function initChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            },
+            interaction: { intersect: false, mode: 'index' },
             plugins: {
-                legend: {
-                    display: false
-                },
+                legend: { display: false },
                 tooltip: {
                     backgroundColor: '#1e293b',
                     titleColor: '#f1f5f9',
@@ -467,21 +578,12 @@ function initChart() {
             scales: {
                 x: {
                     display: true,
-                    grid: {
-                        color: '#334155',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        maxTicksLimit: 6
-                    }
+                    grid: { color: '#334155', drawBorder: false },
+                    ticks: { color: '#94a3b8', maxTicksLimit: 6 }
                 },
                 y: {
                     display: true,
-                    grid: {
-                        color: '#334155',
-                        drawBorder: false
-                    },
+                    grid: { color: '#334155', drawBorder: false },
                     ticks: {
                         color: '#94a3b8',
                         callback: function(value) {
@@ -510,8 +612,6 @@ function updateChart() {
 }
 
 function updateChartTimeframe() {
-    // In a real implementation, this would fetch different timeframe data
-    // For now, we just update the display
     fetchData();
 }
 
@@ -618,7 +718,6 @@ function calculateSignal() {
 }
 
 function displaySignal(signal, strength, reasons) {
-    // Update badge
     const signalText = {
         buy: '🟢 買いシグナル',
         sell: '🔴 売りシグナル',
@@ -665,7 +764,7 @@ function displayOrderBook(data) {
         </div>
     `;
     
-    // Asks (売り注文)
+    // Asks
     let cumulativeAsk = 0;
     asks.forEach(ask => {
         const price = parseFloat(ask[0]);
@@ -681,10 +780,9 @@ function displayOrderBook(data) {
         `;
     });
     
-    // Separator
     html += `<div style="height: 2px; background: #475569; margin: 4px 0;"></div>`;
     
-    // Bids (買い注文)
+    // Bids
     let cumulativeBid = 0;
     bids.forEach(bid => {
         const price = parseFloat(bid[0]);
@@ -747,7 +845,7 @@ function updateAlertList() {
     elements.alertList.innerHTML = html;
 }
 
-function removeAlert(id) {
+window.removeAlert = function(id) {
     priceAlerts = priceAlerts.filter(a => a.id !== id);
     updateAlertList();
     savePriceAlerts();
@@ -757,7 +855,7 @@ function checkPriceAlerts(currentPrice) {
     priceAlerts.forEach(alert => {
         if (!alert.triggered && alert.pair === currentPair) {
             const diff = Math.abs(currentPrice - alert.price);
-            const threshold = alert.price * 0.001; // 0.1%
+            const threshold = alert.price * 0.001;
             
             if (diff <= threshold) {
                 alert.triggered = true;
@@ -838,53 +936,271 @@ function calculateBollingerBands(prices, period = 20, stdDev = 2) {
     };
 }
 
+// ============================================
+// Overview / All Currencies Analysis
+// ============================================
+
+async function fetchAllCurrencies() {
+    updateStatusOverview('connecting', '全通貨を分析中...');
+    
+    const results = [];
+    const batchSize = 3; // Reduced batch size for stability
+    
+    for (let i = 0; i < ALL_PAIRS.length; i += batchSize) {
+        const batch = ALL_PAIRS.slice(i, i + batchSize);
+        const batchPromises = batch.map(pair => fetchTickerForOverview(pair));
+        const batchResults = await Promise.all(batchPromises);
+        results.push(...batchResults);
+        
+        // Progress
+        const progress = Math.min(100, Math.round(((i + batch.length) / ALL_PAIRS.length) * 100));
+        updateStatusOverview('connecting', `分析中... ${progress}%`);
+        
+        // Wait to avoid rate limits
+        if (i + batchSize < ALL_PAIRS.length) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+    }
+    
+    // Save data
+    results.forEach(data => {
+        if (data && data.pair && data.ticker) {
+            allCurrenciesData[data.pair] = data.ticker;
+            
+            if (!allCurrenciesHistory[data.pair]) {
+                allCurrenciesHistory[data.pair] = [];
+            }
+            allCurrenciesHistory[data.pair].push({
+                price: parseFloat(data.ticker.last),
+                timestamp: Date.now()
+            });
+            
+            if (allCurrenciesHistory[data.pair].length > 100) {
+                allCurrenciesHistory[data.pair] = allCurrenciesHistory[data.pair].slice(-100);
+            }
+        }
+    });
+    
+    // Analyze and display
+    analyzeAllCurrencies();
+    updateStatusOverview('connected', CONFIG.DEMO_MODE ? 'デモモード' : '接続中');
+    
+    // Update time
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ja-JP');
+    const updateTimeOverview = document.getElementById('updateTimeOverview');
+    if (updateTimeOverview) {
+        updateTimeOverview.textContent = `最終更新: ${timeStr}`;
+    }
+}
+
+async function fetchTickerForOverview(pair) {
+    try {
+        const ticker = await fetchTicker(pair);
+        return { pair, ticker };
+    } catch (error) {
+        console.error(`Error fetching ${pair}:`, error);
+        return { pair, ticker: null };
+    }
+}
+
+function analyzeAllCurrencies() {
+    const analyses = [];
+    
+    ALL_PAIRS.forEach(pair => {
+        const history = allCurrenciesHistory[pair];
+        if (!history || history.length < 14) return;
+        
+        const prices = history.map(h => h.price);
+        const currentPrice = prices[prices.length - 1];
+        const previousPrice = prices[prices.length - 2] || currentPrice;
+        
+        // Calculate indicators
+        const rsi = calculateRSI(prices, 14);
+        const sma5 = calculateSMA(prices, 5);
+        const sma20 = calculateSMA(prices, 20);
+        const bb = calculateBollingerBands(prices, 20, 2);
+        
+        // Calculate score
+        let score = 0;
+        let reasons = [];
+        
+        // RSI
+        if (rsi < 30) {
+            score += 3;
+            reasons.push('RSI売られすぎ');
+        } else if (rsi < 40) {
+            score += 1;
+            reasons.push('RSI低め');
+        } else if (rsi > 70) {
+            score -= 3;
+            reasons.push('RSI買われすぎ');
+        } else if (rsi > 60) {
+            score -= 1;
+            reasons.push('RSI高め');
+        }
+        
+        // Moving averages
+        if (sma5 > sma20) {
+            const crossStrength = ((sma5 - sma20) / sma20) * 100;
+            if (crossStrength > 2) {
+                score += 2;
+                reasons.push('強い上昇トレンド');
+            } else {
+                score += 1;
+                reasons.push('上昇トレンド');
+            }
+        } else {
+            const crossStrength = ((sma20 - sma5) / sma20) * 100;
+            if (crossStrength > 2) {
+                score -= 2;
+                reasons.push('強い下降トレンド');
+            } else {
+                score -= 1;
+                reasons.push('下降トレンド');
+            }
+        }
+        
+        // Bollinger Bands
+        if (currentPrice < bb.lower) {
+            score += 2;
+            reasons.push('BB下限突破');
+        } else if (currentPrice > bb.upper) {
+            score -= 2;
+            reasons.push('BB上限突破');
+        }
+        
+        // Price change
+        const priceChange = ((currentPrice - previousPrice) / previousPrice) * 100;
+        
+        // Signal
+        let signal = 'hold';
+        let signalStrength = 'weak';
+        
+        if (score >= 3) {
+            signal = 'buy';
+            if (score >= 5) signalStrength = 'strong';
+            else if (score >= 4) signalStrength = 'moderate';
+        } else if (score <= -3) {
+            signal = 'sell';
+            if (score <= -5) signalStrength = 'strong';
+            else if (score <= -4) signalStrength = 'moderate';
+        }
+        
+        analyses.push({
+            pair, signal, signalStrength,
+            score: Math.abs(score),
+            reasons: reasons.slice(0, 2),
+            price: currentPrice,
+            priceChange, rsi, sma5, sma20
+        });
+    });
+    
+    displayOverviewAnalysis(analyses);
+}
+
+function displayOverviewAnalysis(analyses) {
+    const buySignals = analyses.filter(a => a.signal === 'buy');
+    const sellSignals = analyses.filter(a => a.signal === 'sell');
+    const holdSignals = analyses.filter(a => a.signal === 'hold');
+    
+    document.getElementById('buyCountOverview').textContent = buySignals.length;
+    document.getElementById('sellCountOverview').textContent = sellSignals.length;
+    document.getElementById('holdCountOverview').textContent = holdSignals.length;
+    
+    const topBuys = buySignals.sort((a, b) => b.score - a.score).slice(0, 10);
+    const topSells = sellSignals.sort((a, b) => b.score - a.score).slice(0, 10);
+    
+    displayRecommendationsOverview('buy', topBuys);
+    displayRecommendationsOverview('sell', topSells);
+    
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ja-JP');
+    document.getElementById('buyRefreshTimeOverview').textContent = timeStr;
+    document.getElementById('sellRefreshTimeOverview').textContent = timeStr;
+}
+
+function displayRecommendationsOverview(type, recommendations) {
+    const containerId = type === 'buy' ? 'buyRecommendationsOverview' : 'sellRecommendationsOverview';
+    const container = document.getElementById(containerId);
+    
+    if (recommendations.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #64748b;">
+                現在${type === 'buy' ? '買い' : '売り'}推奨の通貨はありません
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    recommendations.forEach((rec, index) => {
+        const strengthClass = rec.signalStrength;
+        const strengthText = {
+            strong: '強',
+            moderate: '中',
+            weak: '弱'
+        }[strengthClass];
+        
+        const changeClass = rec.priceChange >= 0 ? 'positive' : 'negative';
+        const changeSymbol = rec.priceChange >= 0 ? '+' : '';
+        
+        html += `
+            <div class="recommendation-item-overview ${type}" data-pair="${rec.pair}" style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #0f172a; border: 1px solid #334155; border-left: 4px solid ${type === 'buy' ? '#10b981' : '#ef4444'}; border-radius: 12px; cursor: pointer; transition: all 0.3s;">
+                <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
+                    <div style="font-size: 24px; font-weight: 700; color: #10b981; min-width: 40px; text-align: center;">${index + 1}</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px;">${getCryptoName(rec.pair)}</div>
+                        <div style="font-size: 13px; color: #94a3b8;">${rec.reasons.join(' / ')}</div>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                    <div>
+                        <span style="padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; background: ${strengthClass === 'strong' ? '#d1fae5' : strengthClass === 'moderate' ? '#fef3c7' : '#e0e7ff'}; color: ${strengthClass === 'strong' ? '#065f46' : strengthClass === 'moderate' ? '#92400e' : '#3730a3'};">
+                            スコア: ${rec.score} (${strengthText})
+                        </span>
+                    </div>
+                    <div style="font-size: 18px; font-weight: 600; color: #f1f5f9; text-align: right;">${formatPrice(rec.price, rec.pair)}</div>
+                    <div style="font-size: 14px; font-weight: 600; color: ${rec.priceChange >= 0 ? '#10b981' : '#ef4444'}; text-align: right;">
+                        ${changeSymbol}${rec.priceChange.toFixed(2)}%
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function updateStatusOverview(status, text) {
+    const statusDot = document.getElementById('statusDotOverview');
+    const statusText = document.getElementById('statusTextOverview');
+    
+    if (statusDot && statusText) {
+        const statusMap = {
+            connecting: 'offline',
+            connected: '',
+            disconnected: 'offline'
+        };
+        statusDot.className = `status-dot ${statusMap[status]}`;
+        statusText.textContent = text;
+    }
+}
+
 // Utility Functions
 function getCryptoName(pair) {
     const names = {
-        // 主要通貨
-        'btc_jpy': 'BTC',
-        'eth_jpy': 'ETH',
-        'xrp_jpy': 'XRP',
-        
-        // 人気アルトコイン
-        'shib_jpy': 'SHIB',
-        'pepe_jpy': 'PEPE',
-        'matic_jpy': 'MATIC',
-        'link_jpy': 'LINK',
-        'dot_jpy': 'DOT',
-        'avax_jpy': 'AVAX',
-        
-        // DeFi・NFT関連
-        'sand_jpy': 'SAND',
-        'mana_jpy': 'MANA',
-        'axs_jpy': 'AXS',
-        'enj_jpy': 'ENJ',
-        'imx_jpy': 'IMX',
-        'ape_jpy': 'APE',
-        'chz_jpy': 'CHZ',
-        
-        // 主要アルトコイン
-        'ltc_jpy': 'LTC',
-        'bch_jpy': 'BCH',
-        'etc_jpy': 'ETC',
-        'xlm_jpy': 'XLM',
-        'xem_jpy': 'XEM',
-        'lsk_jpy': 'LSK',
-        
-        // DeFi・取引所トークン
-        'bat_jpy': 'BAT',
-        'iost_jpy': 'IOST',
-        'qtum_jpy': 'QTUM',
-        'fnct_jpy': 'FNCT',
-        'grt_jpy': 'GRT',
-        'mask_jpy': 'MASK',
-        
-        // その他
-        'mona_jpy': 'MONA',
-        'wbtc_jpy': 'WBTC',
-        'fpl_jpy': 'FPL',
-        'doge_jpy': 'DOGE',
-        'bril_jpy': 'BRIL'
+        'btc_jpy': 'BTC', 'eth_jpy': 'ETH', 'xrp_jpy': 'XRP',
+        'shib_jpy': 'SHIB', 'pepe_jpy': 'PEPE', 'matic_jpy': 'MATIC',
+        'link_jpy': 'LINK', 'dot_jpy': 'DOT', 'avax_jpy': 'AVAX',
+        'sand_jpy': 'SAND', 'mana_jpy': 'MANA', 'axs_jpy': 'AXS',
+        'enj_jpy': 'ENJ', 'imx_jpy': 'IMX', 'ape_jpy': 'APE', 'chz_jpy': 'CHZ',
+        'ltc_jpy': 'LTC', 'bch_jpy': 'BCH', 'etc_jpy': 'ETC',
+        'xlm_jpy': 'XLM', 'xem_jpy': 'XEM', 'lsk_jpy': 'LSK',
+        'bat_jpy': 'BAT', 'iost_jpy': 'IOST', 'qtum_jpy': 'QTUM',
+        'fnct_jpy': 'FNCT', 'grt_jpy': 'GRT', 'mask_jpy': 'MASK',
+        'mona_jpy': 'MONA', 'wbtc_jpy': 'WBTC', 'fpl_jpy': 'FPL',
+        'doge_jpy': 'DOGE', 'bril_jpy': 'BRIL'
     };
     return names[pair] || pair.replace('_jpy', '').toUpperCase();
 }
@@ -917,14 +1233,12 @@ function showHistory() {
 }
 
 function loadSettings() {
-    // Load price alerts from localStorage
     const saved = localStorage.getItem('priceAlerts');
     if (saved) {
         priceAlerts = JSON.parse(saved);
         updateAlertList();
     }
     
-    // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
     }
@@ -934,7 +1248,7 @@ function savePriceAlerts() {
     localStorage.setItem('priceAlerts', JSON.stringify(priceAlerts));
 }
 
-// Cleanup on page unload
 window.addEventListener('beforeunload', () => {
     if (updateInterval) clearInterval(updateInterval);
+    if (overviewUpdateInterval) clearInterval(overviewUpdateInterval);
 });

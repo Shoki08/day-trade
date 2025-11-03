@@ -49,6 +49,14 @@
             font-size: 14px;
         }
 
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
         .grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -528,6 +536,87 @@
             <p class="subtitle">短期投資向け - リアルタイム分析</p>
         </div>
 
+        <!-- Tab Navigation -->
+        <div class="card" style="margin-bottom: 16px;">
+            <div style="display: flex; gap: 12px;">
+                <button class="tab-nav-btn active" data-tab="overview" style="flex: 1; padding: 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                    📊 全体分析
+                </button>
+                <button class="tab-nav-btn" data-tab="individual" style="flex: 1; padding: 14px; background: #334155; border: none; border-radius: 12px; color: #f1f5f9; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                    🔍 個別分析
+                </button>
+            </div>
+        </div>
+
+        <!-- Overview Tab Content -->
+        <div id="overviewContent" class="tab-content active">
+            <!-- Status -->
+            <div class="card" style="margin-bottom: 16px;">
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDotOverview"></div>
+                    <span id="statusTextOverview">分析中...</span>
+                </div>
+                <div class="update-time" id="updateTimeOverview">最終更新: ---</div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+                <div class="stat-card" style="border-top: 4px solid #10b981;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">🟢</div>
+                    <div class="stat-label">買い推奨</div>
+                    <div style="font-size: 36px; font-weight: 700; color: #f1f5f9;" id="buyCountOverview">0</div>
+                    <div style="font-size: 12px; color: #94a3b8;">通貨</div>
+                </div>
+                <div class="stat-card" style="border-top: 4px solid #ef4444;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">🔴</div>
+                    <div class="stat-label">売り推奨</div>
+                    <div style="font-size: 36px; font-weight: 700; color: #f1f5f9;" id="sellCountOverview">0</div>
+                    <div style="font-size: 12px; color: #94a3b8;">通貨</div>
+                </div>
+                <div class="stat-card" style="border-top: 4px solid #3b82f6;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">🔵</div>
+                    <div class="stat-label">様子見</div>
+                    <div style="font-size: 36px; font-weight: 700; color: #f1f5f9;" id="holdCountOverview">0</div>
+                    <div style="font-size: 12px; color: #94a3b8;">通貨</div>
+                </div>
+            </div>
+
+            <!-- Buy Recommendations -->
+            <div class="card" style="margin-bottom: 16px;">
+                <div class="card-header">
+                    <div class="card-title">🟢 買い推奨ランキング</div>
+                    <span style="font-size: 12px; color: #94a3b8;" id="buyRefreshTimeOverview">---</span>
+                </div>
+                <div id="buyRecommendationsOverview" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="text-align: center; padding: 20px; color: #64748b;">
+                        分析中...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sell Recommendations -->
+            <div class="card" style="margin-bottom: 16px;">
+                <div class="card-header">
+                    <div class="card-title">🔴 売り推奨ランキング</div>
+                    <span style="font-size: 12px; color: #94a3b8;" id="sellRefreshTimeOverview">---</span>
+                </div>
+                <div id="sellRecommendationsOverview" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="text-align: center; padding: 20px; color: #64748b;">
+                        分析中...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Refresh Button -->
+            <div style="text-align: center;">
+                <button class="btn btn-primary" id="refreshOverviewBtn" style="padding: 14px 40px;">
+                    🔄 全通貨を再分析
+                </button>
+            </div>
+        </div>
+
+        <!-- Individual Tab Content -->
+        <div id="individualContent" class="tab-content">
         <div class="grid">
             <!-- Left Column -->
             <div>
@@ -748,6 +837,7 @@
                 </div>
             </div>
         </div>
+        </div><!-- End Individual Tab -->
 
         <!-- Disclaimer -->
         <div class="disclaimer">
