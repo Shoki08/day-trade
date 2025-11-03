@@ -2,10 +2,14 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#00d9b8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="暗号資産AI">
     <title>暗号資産アドバイザー - コインチェック連携</title>
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%23667eea' rx='40'/><text x='50%' y='50%' font-size='120' text-anchor='middle' dominant-baseline='central'>💰</text></svg>">
     <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>💰</text></svg>">
     <style>
         * {
@@ -442,10 +446,51 @@
             <div class="crypto-selector">
                 <label for="cryptoSelect">通貨ペア</label>
                 <select id="cryptoSelect">
-                    <option value="btc_jpy">ビットコイン (BTC/JPY)</option>
-                    <option value="eth_jpy">イーサリアム (ETH/JPY)</option>
-                    <option value="xrp_jpy">リップル (XRP/JPY)</option>
-                    <option value="ltc_jpy">ライトコイン (LTC/JPY)</option>
+                    <optgroup label="主要通貨">
+                        <option value="btc_jpy">ビットコイン (BTC/JPY)</option>
+                        <option value="eth_jpy">イーサリアム (ETH/JPY)</option>
+                        <option value="xrp_jpy">リップル (XRP/JPY)</option>
+                    </optgroup>
+                    <optgroup label="人気アルトコイン">
+                        <option value="shib_jpy">柴犬コイン (SHIB/JPY)</option>
+                        <option value="pepe_jpy">ペペコイン (PEPE/JPY)</option>
+                        <option value="matic_jpy">ポリゴン (MATIC/JPY)</option>
+                        <option value="link_jpy">チェーンリンク (LINK/JPY)</option>
+                        <option value="dot_jpy">ポルカドット (DOT/JPY)</option>
+                        <option value="avax_jpy">アバランチ (AVAX/JPY)</option>
+                    </optgroup>
+                    <optgroup label="DeFi・NFT関連">
+                        <option value="sand_jpy">サンドボックス (SAND/JPY)</option>
+                        <option value="mana_jpy">ディセントラランド (MANA/JPY)</option>
+                        <option value="axs_jpy">アクシー (AXS/JPY)</option>
+                        <option value="enj_jpy">エンジンコイン (ENJ/JPY)</option>
+                        <option value="imx_jpy">Immutable X (IMX/JPY)</option>
+                        <option value="ape_jpy">ApeCoin (APE/JPY)</option>
+                        <option value="chz_jpy">Chiliz (CHZ/JPY)</option>
+                    </optgroup>
+                    <optgroup label="主要アルトコイン">
+                        <option value="ltc_jpy">ライトコイン (LTC/JPY)</option>
+                        <option value="bch_jpy">ビットコインキャッシュ (BCH/JPY)</option>
+                        <option value="etc_jpy">イーサリアムクラシック (ETC/JPY)</option>
+                        <option value="xlm_jpy">ステラルーメン (XLM/JPY)</option>
+                        <option value="xem_jpy">ネム (XEM/JPY)</option>
+                        <option value="lsk_jpy">リスク (LSK/JPY)</option>
+                    </optgroup>
+                    <optgroup label="DeFi・取引所トークン">
+                        <option value="bat_jpy">ベーシックアテンショントークン (BAT/JPY)</option>
+                        <option value="iost_jpy">IOST (IOST/JPY)</option>
+                        <option value="qtum_jpy">Qtum (QTUM/JPY)</option>
+                        <option value="fnct_jpy">Fnality (FNCT/JPY)</option>
+                        <option value="grt_jpy">The Graph (GRT/JPY)</option>
+                        <option value="mask_jpy">Mask Network (MASK/JPY)</option>
+                    </optgroup>
+                    <optgroup label="その他">
+                        <option value="mona_jpy">モナコイン (MONA/JPY)</option>
+                        <option value="wbtc_jpy">Wrapped Bitcoin (WBTC/JPY)</option>
+                        <option value="fpl_jpy">Flare (FPL/JPY)</option>
+                        <option value="doge_jpy">ドージコイン (DOGE/JPY)</option>
+                        <option value="bril_jpy">Brilliance (BRIL/JPY)</option>
+                    </optgroup>
                 </select>
             </div>
         </div>
@@ -501,12 +546,16 @@
 
     <script src="app.js"></script>
     <script>
-        // Service Worker Registration
+        // Service Worker Registration (iOS Safari対応)
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
+            window.addEventListener('load', function() {
                 navigator.serviceWorker.register('service-worker.js')
-                    .then(reg => console.log('Service Worker registered'))
-                    .catch(err => console.log('Service Worker registration failed'));
+                    .then(function(reg) {
+                        console.log('Service Worker registered');
+                    })
+                    .catch(function(err) {
+                        console.log('Service Worker registration failed:', err);
+                    });
             });
         }
     </script>

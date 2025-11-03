@@ -2,10 +2,14 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#10b981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="デイトレードAI">
     <title>デイトレードアドバイザー - コインチェック</title>
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%2310b981' rx='40'/><text x='50%' y='50%' font-size='120' text-anchor='middle' dominant-baseline='central'>⚡</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
@@ -110,21 +114,25 @@
 
         .crypto-selector {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
             gap: 8px;
             margin-bottom: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 4px;
         }
 
         .crypto-btn {
-            padding: 12px;
+            padding: 10px 8px;
             background: #334155;
             border: 2px solid #475569;
             border-radius: 8px;
             color: #f1f5f9;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
         }
 
         .crypto-btn:hover {
@@ -526,10 +534,39 @@
                 <!-- Price Display -->
                 <div class="card">
                     <div class="crypto-selector">
-                        <button class="crypto-btn active" data-pair="btc_jpy">BTC/JPY</button>
-                        <button class="crypto-btn" data-pair="eth_jpy">ETH/JPY</button>
-                        <button class="crypto-btn" data-pair="xrp_jpy">XRP/JPY</button>
-                        <button class="crypto-btn" data-pair="ltc_jpy">LTC/JPY</button>
+                        <button class="crypto-btn active" data-pair="btc_jpy">BTC</button>
+                        <button class="crypto-btn" data-pair="eth_jpy">ETH</button>
+                        <button class="crypto-btn" data-pair="xrp_jpy">XRP</button>
+                        <button class="crypto-btn" data-pair="shib_jpy">SHIB</button>
+                        <button class="crypto-btn" data-pair="pepe_jpy">PEPE</button>
+                        <button class="crypto-btn" data-pair="matic_jpy">MATIC</button>
+                        <button class="crypto-btn" data-pair="link_jpy">LINK</button>
+                        <button class="crypto-btn" data-pair="dot_jpy">DOT</button>
+                        <button class="crypto-btn" data-pair="avax_jpy">AVAX</button>
+                        <button class="crypto-btn" data-pair="sand_jpy">SAND</button>
+                        <button class="crypto-btn" data-pair="mana_jpy">MANA</button>
+                        <button class="crypto-btn" data-pair="axs_jpy">AXS</button>
+                        <button class="crypto-btn" data-pair="enj_jpy">ENJ</button>
+                        <button class="crypto-btn" data-pair="imx_jpy">IMX</button>
+                        <button class="crypto-btn" data-pair="ape_jpy">APE</button>
+                        <button class="crypto-btn" data-pair="chz_jpy">CHZ</button>
+                        <button class="crypto-btn" data-pair="ltc_jpy">LTC</button>
+                        <button class="crypto-btn" data-pair="bch_jpy">BCH</button>
+                        <button class="crypto-btn" data-pair="etc_jpy">ETC</button>
+                        <button class="crypto-btn" data-pair="xlm_jpy">XLM</button>
+                        <button class="crypto-btn" data-pair="xem_jpy">XEM</button>
+                        <button class="crypto-btn" data-pair="lsk_jpy">LSK</button>
+                        <button class="crypto-btn" data-pair="bat_jpy">BAT</button>
+                        <button class="crypto-btn" data-pair="iost_jpy">IOST</button>
+                        <button class="crypto-btn" data-pair="qtum_jpy">QTUM</button>
+                        <button class="crypto-btn" data-pair="fnct_jpy">FNCT</button>
+                        <button class="crypto-btn" data-pair="grt_jpy">GRT</button>
+                        <button class="crypto-btn" data-pair="mask_jpy">MASK</button>
+                        <button class="crypto-btn" data-pair="mona_jpy">MONA</button>
+                        <button class="crypto-btn" data-pair="wbtc_jpy">WBTC</button>
+                        <button class="crypto-btn" data-pair="fpl_jpy">FPL</button>
+                        <button class="crypto-btn" data-pair="doge_jpy">DOGE</button>
+                        <button class="crypto-btn" data-pair="bril_jpy">BRIL</button>
                     </div>
 
                     <div class="price-display">

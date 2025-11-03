@@ -176,13 +176,53 @@ async function fetchTicker(pair) {
 // デモデータ生成
 function generateDemoData(pair) {
     const basePrice = {
+        // 主要通貨
         'btc_jpy': 8500000,
         'eth_jpy': 450000,
         'xrp_jpy': 95,
-        'ltc_jpy': 12000
+        
+        // 人気アルトコイン
+        'shib_jpy': 0.003,
+        'pepe_jpy': 0.0015,
+        'matic_jpy': 120,
+        'link_jpy': 2800,
+        'dot_jpy': 1200,
+        'avax_jpy': 6500,
+        
+        // DeFi・NFT関連
+        'sand_jpy': 85,
+        'mana_jpy': 75,
+        'axs_jpy': 1200,
+        'enj_jpy': 68,
+        'imx_jpy': 350,
+        'ape_jpy': 280,
+        'chz_jpy': 18,
+        
+        // 主要アルトコイン
+        'ltc_jpy': 12000,
+        'bch_jpy': 65000,
+        'etc_jpy': 4500,
+        'xlm_jpy': 19,
+        'xem_jpy': 8.5,
+        'lsk_jpy': 185,
+        
+        // DeFi・取引所トークン
+        'bat_jpy': 42,
+        'iost_jpy': 1.8,
+        'qtum_jpy': 550,
+        'fnct_jpy': 35,
+        'grt_jpy': 38,
+        'mask_jpy': 620,
+        
+        // その他
+        'mona_jpy': 95,
+        'wbtc_jpy': 8500000,
+        'fpl_jpy': 8.2,
+        'doge_jpy': 22,
+        'bril_jpy': 145
     };
     
-    const base = basePrice[pair] || 1000000;
+    const base = basePrice[pair] || 1000;
     const variation = base * 0.02; // ±2%の変動
     const price = base + (Math.random() - 0.5) * variation;
     
@@ -254,10 +294,22 @@ function updatePriceDisplay(price) {
 }
 
 function formatPrice(price, pair) {
-    if (pair.includes('btc') || pair.includes('eth')) {
+    // 価格の大きさに応じてフォーマット
+    if (price >= 100000) {
+        // 10万円以上（BTC, ETH, BCH, WBTCなど）
         return `¥${price.toLocaleString('ja-JP', { maximumFractionDigits: 0 })}`;
-    } else {
+    } else if (price >= 1000) {
+        // 1000円以上（多くのアルトコイン）
+        return `¥${price.toLocaleString('ja-JP', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    } else if (price >= 10) {
+        // 10円以上
         return `¥${price.toLocaleString('ja-JP', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    } else if (price >= 0.01) {
+        // 0.01円以上
+        return `¥${price.toFixed(4)}`;
+    } else {
+        // 0.01円未満（SHIB, PEPEなど）
+        return `¥${price.toFixed(6)}`;
     }
 }
 
@@ -474,10 +526,50 @@ function sendNotification(signal, isTest = false) {
 
 function getCryptoName(pair) {
     const names = {
+        // 主要通貨
         'btc_jpy': 'ビットコイン',
         'eth_jpy': 'イーサリアム',
         'xrp_jpy': 'リップル',
-        'ltc_jpy': 'ライトコイン'
+        
+        // 人気アルトコイン
+        'shib_jpy': '柴犬コイン',
+        'pepe_jpy': 'ペペコイン',
+        'matic_jpy': 'ポリゴン',
+        'link_jpy': 'チェーンリンク',
+        'dot_jpy': 'ポルカドット',
+        'avax_jpy': 'アバランチ',
+        
+        // DeFi・NFT関連
+        'sand_jpy': 'サンドボックス',
+        'mana_jpy': 'ディセントラランド',
+        'axs_jpy': 'アクシー',
+        'enj_jpy': 'エンジンコイン',
+        'imx_jpy': 'Immutable X',
+        'ape_jpy': 'ApeCoin',
+        'chz_jpy': 'Chiliz',
+        
+        // 主要アルトコイン
+        'ltc_jpy': 'ライトコイン',
+        'bch_jpy': 'ビットコインキャッシュ',
+        'etc_jpy': 'イーサリアムクラシック',
+        'xlm_jpy': 'ステラルーメン',
+        'xem_jpy': 'ネム',
+        'lsk_jpy': 'リスク',
+        
+        // DeFi・取引所トークン
+        'bat_jpy': 'BAT',
+        'iost_jpy': 'IOST',
+        'qtum_jpy': 'Qtum',
+        'fnct_jpy': 'Fnality',
+        'grt_jpy': 'The Graph',
+        'mask_jpy': 'Mask Network',
+        
+        // その他
+        'mona_jpy': 'モナコイン',
+        'wbtc_jpy': 'Wrapped Bitcoin',
+        'fpl_jpy': 'Flare',
+        'doge_jpy': 'ドージコイン',
+        'bril_jpy': 'Brilliance'
     };
     return names[pair] || pair;
 }
