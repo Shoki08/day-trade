@@ -357,6 +357,240 @@
             color: #dc2626;
         }
 
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 16px;
+            padding: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 14px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .summary-card.buy {
+            border-top: 4px solid #10b981;
+        }
+
+        .summary-card.sell {
+            border-top: 4px solid #ef4444;
+        }
+
+        .summary-card.hold {
+            border-top: 4px solid #3b82f6;
+        }
+
+        .summary-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .summary-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .summary-sublabel {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* Recommendation Section */
+        .recommendation-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .section-header h3 {
+            font-size: 20px;
+            color: #333;
+            margin: 0;
+        }
+
+        .refresh-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .recommendation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .recommendation-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border-left: 4px solid #10b981;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .recommendation-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .recommendation-item.sell {
+            border-left-color: #ef4444;
+        }
+
+        .recommendation-item-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .recommendation-rank {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .recommendation-info {
+            flex: 1;
+        }
+
+        .recommendation-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .recommendation-reason {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .recommendation-score {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .score-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .score-badge.strong {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .score-badge.moderate {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .score-badge.weak {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .recommendation-price {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            text-align: right;
+        }
+
+        .recommendation-change {
+            font-size: 14px;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .recommendation-change.positive {
+            color: #10b981;
+        }
+
+        .recommendation-change.negative {
+            color: #ef4444;
+        }
+
         .loading {
             text-align: center;
             padding: 20px;
@@ -433,6 +667,86 @@
             <p class="subtitle">コインチェック連携 - 初心者向け売買サポート</p>
         </div>
 
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="overview">📊 全体分析</button>
+            <button class="tab-btn" data-tab="individual">🔍 個別分析</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overviewTab" class="tab-content active">
+            <!-- Status -->
+            <div class="status-card">
+                <div class="status-indicator">
+                    <span style="font-weight: 600; color: #666;">接続状態</span>
+                    <span id="statusBadgeOverview" class="status-badge loading">
+                        <span id="statusTextOverview">分析中...</span>
+                    </span>
+                </div>
+                <div style="margin-top: 12px; font-size: 14px; color: #666;">
+                    <span id="lastUpdateOverview">最終更新: ---</span>
+                </div>
+            </div>
+
+            <!-- Market Summary -->
+            <div class="summary-cards">
+                <div class="summary-card buy">
+                    <div class="summary-icon">🟢</div>
+                    <div class="summary-label">買い推奨</div>
+                    <div class="summary-value" id="buyCount">0</div>
+                    <div class="summary-sublabel">通貨</div>
+                </div>
+                <div class="summary-card sell">
+                    <div class="summary-icon">🔴</div>
+                    <div class="summary-label">売り推奨</div>
+                    <div class="summary-value" id="sellCount">0</div>
+                    <div class="summary-sublabel">通貨</div>
+                </div>
+                <div class="summary-card hold">
+                    <div class="summary-icon">🔵</div>
+                    <div class="summary-label">様子見</div>
+                    <div class="summary-value" id="holdCount">0</div>
+                    <div class="summary-sublabel">通貨</div>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="recommendation-section">
+                <div class="section-header">
+                    <h3>🟢 買い推奨ランキング</h3>
+                    <span class="refresh-time" id="buyRefreshTime">---</span>
+                </div>
+                <div id="buyRecommendations" class="recommendation-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>分析中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recommendation-section">
+                <div class="section-header">
+                    <h3>🔴 売り推奨ランキング</h3>
+                    <span class="refresh-time" id="sellRefreshTime">---</span>
+                </div>
+                <div id="sellRecommendations" class="recommendation-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>分析中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="refreshOverviewButton">
+                    🔄 全通貨を再分析
+                </button>
+            </div>
+        </div>
+
+        <!-- Individual Tab -->
+        <div id="individualTab" class="tab-content">
         <!-- Status -->
         <div class="status-card">
             <div class="status-indicator">
@@ -542,6 +856,9 @@
             <strong>⚠️ 免責事項</strong><br>
             このアプリは教育目的のデモです。表示される売買推奨は、テクニカル分析に基づく参考情報であり、投資助言ではありません。実際の投資判断は必ずご自身の責任で行ってください。暗号資産投資には価格変動リスクがあります。
         </div>
+
+        </div><!-- End Individual Tab -->
+
     </div>
 
     <script src="app.js"></script>

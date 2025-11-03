@@ -11,10 +11,24 @@ const CONFIG = {
 
 // State
 let currentPair = 'btc_jpy';
+let currentTab = 'overview';
 let priceHistory = [];
+let allCurrenciesData = {};
+let allCurrenciesHistory = {};
 let lastPrice = null;
 let notificationsEnabled = false;
 let deferredPrompt = null;
+let overviewUpdateInterval = null;
+
+// All supported pairs
+const ALL_PAIRS = [
+    'btc_jpy', 'eth_jpy', 'xrp_jpy', 'shib_jpy', 'pepe_jpy', 'matic_jpy',
+    'link_jpy', 'dot_jpy', 'avax_jpy', 'sand_jpy', 'mana_jpy', 'axs_jpy',
+    'enj_jpy', 'imx_jpy', 'ape_jpy', 'chz_jpy', 'ltc_jpy', 'bch_jpy',
+    'etc_jpy', 'xlm_jpy', 'xem_jpy', 'lsk_jpy', 'bat_jpy', 'iost_jpy',
+    'qtum_jpy', 'fnct_jpy', 'grt_jpy', 'mask_jpy', 'mona_jpy', 'wbtc_jpy',
+    'fpl_jpy', 'doge_jpy', 'bril_jpy'
+];
 
 // DOM Elements
 const elements = {
@@ -38,12 +52,28 @@ document.addEventListener('DOMContentLoaded', init);
 function init() {
     setupEventListeners();
     loadSettings();
-    fetchData();
-    setInterval(fetchData, CONFIG.REFRESH_INTERVAL);
     setupInstallPrompt();
+    
+    // Start with overview tab
+    if (currentTab === 'overview') {
+        fetchAllCurrencies();
+        overviewUpdateInterval = setInterval(fetchAllCurrencies, CONFIG.REFRESH_INTERVAL);
+    } else {
+        fetchData();
+        setInterval(fetchData, CONFIG.REFRESH_INTERVAL);
+    }
 }
 
 function setupEventListeners() {
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const tab = e.target.dataset.tab;
+            switchTab(tab);
+        });
+    });
+
+    // Crypto selector (individual tab)
     elements.cryptoSelect.addEventListener('change', (e) => {
         currentPair = e.target.value;
         priceHistory = [];
@@ -64,6 +94,59 @@ function setupEventListeners() {
     });
 
     elements.historyButton.addEventListener('click', showHistory);
+
+    // Overview tab refresh
+    const refreshOverviewButton = document.getElementById('refreshOverviewButton');
+    if (refreshOverviewButton) {
+        refreshOverviewButton.addEventListener('click', () => {
+            refreshOverviewButton.disabled = true;
+            refreshOverviewButton.textContent = '🔄 分析中...';
+            fetchAllCurrencies().finally(() => {
+                refreshOverviewButton.disabled = false;
+                refreshOverviewButton.textContent = '🔄 全通貨を再分析';
+            });
+        });
+    }
+
+    // Recommendation item click
+    document.addEventListener('click', (e) => {
+        const item = e.target.closest('.recommendation-item');
+        if (item && item.dataset.pair) {
+            currentPair = item.dataset.pair;
+            switchTab('individual');
+            // Update select
+            elements.cryptoSelect.value = currentPair;
+            priceHistory = [];
+            fetchData();
+        }
+    });
+}
+
+function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    
+    // Update content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === `${tab}Tab`);
+    });
+    
+    // Start/stop overview updates
+    if (tab === 'overview') {
+        fetchAllCurrencies();
+        if (!overviewUpdateInterval) {
+            overviewUpdateInterval = setInterval(fetchAllCurrencies, CONFIG.REFRESH_INTERVAL);
+        }
+    } else {
+        if (overviewUpdateInterval) {
+            clearInterval(overviewUpdateInterval);
+            overviewUpdateInterval = null;
+        }
+    }
 }
 
 function setupInstallPrompt() {
@@ -616,4 +699,265 @@ if (typeof module !== 'undefined' && module.exports) {
         calculateSMA,
         calculateSignal
     };
+}
+
+// ============================================
+// Overview / All Currencies Analysis
+// ============================================
+
+async function fetchAllCurrencies() {
+    updateStatusOverview('loading', '全通貨を分析中...');
+    
+    const results = [];
+    const batchSize = 5; // 5通貨ずつ取得（レート制限対策）
+    
+    for (let i = 0; i < ALL_PAIRS.length; i += batchSize) {
+        const batch = ALL_PAIRS.slice(i, i + batchSize);
+        const batchPromises = batch.map(pair => fetchTickerForOverview(pair));
+        const batchResults = await Promise.all(batchPromises);
+        results.push(...batchResults);
+        
+        // 進捗表示
+        const progress = Math.min(100, Math.round(((i + batch.length) / ALL_PAIRS.length) * 100));
+        updateStatusOverview('loading', `分析中... ${progress}%`);
+        
+        // 少し待機（レート制限対策）
+        if (i + batchSize < ALL_PAIRS.length) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+    }
+    
+    // データを保存
+    results.forEach(data => {
+        if (data && data.pair && data.ticker) {
+            allCurrenciesData[data.pair] = data.ticker;
+            
+            // 履歴に追加
+            if (!allCurrenciesHistory[data.pair]) {
+                allCurrenciesHistory[data.pair] = [];
+            }
+            allCurrenciesHistory[data.pair].push({
+                price: parseFloat(data.ticker.last),
+                timestamp: Date.now()
+            });
+            
+            // 履歴を制限
+            if (allCurrenciesHistory[data.pair].length > CONFIG.HISTORY_LIMIT) {
+                allCurrenciesHistory[data.pair] = allCurrenciesHistory[data.pair].slice(-CONFIG.HISTORY_LIMIT);
+            }
+        }
+    });
+    
+    // 分析して表示
+    analyzeAllCurrencies();
+    updateStatusOverview('connected', CONFIG.DEMO_MODE ? 'デモモード' : '接続中');
+    
+    // 更新時刻を表示
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ja-JP');
+    document.getElementById('lastUpdateOverview').textContent = `最終更新: ${timeStr}`;
+}
+
+async function fetchTickerForOverview(pair) {
+    try {
+        const ticker = await fetchTicker(pair);
+        return { pair, ticker };
+    } catch (error) {
+        console.error(`Error fetching ${pair}:`, error);
+        return { pair, ticker: null };
+    }
+}
+
+function analyzeAllCurrencies() {
+    const analyses = [];
+    
+    ALL_PAIRS.forEach(pair => {
+        const history = allCurrenciesHistory[pair];
+        if (!history || history.length < 14) return;
+        
+        const prices = history.map(h => h.price);
+        const currentPrice = prices[prices.length - 1];
+        const previousPrice = prices[prices.length - 2] || currentPrice;
+        
+        // テクニカル指標を計算
+        const rsi = calculateRSI(prices, 14);
+        const sma7 = calculateSMA(prices, 7);
+        const sma25 = calculateSMA(prices, 25);
+        const macd = calculateMACD(prices);
+        
+        // スコアを計算
+        let score = 0;
+        let reasons = [];
+        
+        // RSI分析
+        if (rsi < 30) {
+            score += 3;
+            reasons.push('RSI売られすぎ');
+        } else if (rsi < 40) {
+            score += 1;
+            reasons.push('RSI低め');
+        } else if (rsi > 70) {
+            score -= 3;
+            reasons.push('RSI買われすぎ');
+        } else if (rsi > 60) {
+            score -= 1;
+            reasons.push('RSI高め');
+        }
+        
+        // 移動平均分析
+        if (sma7 > sma25) {
+            const crossStrength = ((sma7 - sma25) / sma25) * 100;
+            if (crossStrength > 2) {
+                score += 2;
+                reasons.push('強い上昇トレンド');
+            } else {
+                score += 1;
+                reasons.push('上昇トレンド');
+            }
+        } else {
+            const crossStrength = ((sma25 - sma7) / sma25) * 100;
+            if (crossStrength > 2) {
+                score -= 2;
+                reasons.push('強い下降トレンド');
+            } else {
+                score -= 1;
+                reasons.push('下降トレンド');
+            }
+        }
+        
+        // MACD分析
+        if (macd.histogram > 0) {
+            score += 1;
+            reasons.push('MACDプラス');
+        } else {
+            score -= 1;
+            reasons.push('MACDマイナス');
+        }
+        
+        // 価格変動
+        const priceChange = ((currentPrice - previousPrice) / previousPrice) * 100;
+        
+        // シグナル判定
+        let signal = 'hold';
+        let signalStrength = 'weak';
+        
+        if (score >= 3) {
+            signal = 'buy';
+            if (score >= 5) signalStrength = 'strong';
+            else if (score >= 4) signalStrength = 'moderate';
+        } else if (score <= -3) {
+            signal = 'sell';
+            if (score <= -5) signalStrength = 'strong';
+            else if (score <= -4) signalStrength = 'moderate';
+        }
+        
+        analyses.push({
+            pair,
+            signal,
+            signalStrength,
+            score: Math.abs(score),
+            reasons: reasons.slice(0, 2), // 上位2つの理由
+            price: currentPrice,
+            priceChange,
+            rsi,
+            sma7,
+            sma25
+        });
+    });
+    
+    // 表示
+    displayOverviewAnalysis(analyses);
+}
+
+function displayOverviewAnalysis(analyses) {
+    // カウント
+    const buySignals = analyses.filter(a => a.signal === 'buy');
+    const sellSignals = analyses.filter(a => a.signal === 'sell');
+    const holdSignals = analyses.filter(a => a.signal === 'hold');
+    
+    document.getElementById('buyCount').textContent = buySignals.length;
+    document.getElementById('sellCount').textContent = sellSignals.length;
+    document.getElementById('holdCount').textContent = holdSignals.length;
+    
+    // 買い推奨をスコア順にソート
+    const topBuys = buySignals
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+    
+    // 売り推奨をスコア順にソート
+    const topSells = sellSignals
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+    
+    // 買い推奨を表示
+    displayRecommendations('buy', topBuys);
+    
+    // 売り推奨を表示
+    displayRecommendations('sell', topSells);
+    
+    // 更新時刻
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ja-JP');
+    document.getElementById('buyRefreshTime').textContent = timeStr;
+    document.getElementById('sellRefreshTime').textContent = timeStr;
+}
+
+function displayRecommendations(type, recommendations) {
+    const containerId = type === 'buy' ? 'buyRecommendations' : 'sellRecommendations';
+    const container = document.getElementById(containerId);
+    
+    if (recommendations.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #999;">
+                現在${type === 'buy' ? '買い' : '売り'}推奨の通貨はありません
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    recommendations.forEach((rec, index) => {
+        const strengthClass = rec.signalStrength;
+        const strengthText = {
+            strong: '強',
+            moderate: '中',
+            weak: '弱'
+        }[strengthClass];
+        
+        const changeClass = rec.priceChange >= 0 ? 'positive' : 'negative';
+        const changeSymbol = rec.priceChange >= 0 ? '+' : '';
+        
+        html += `
+            <div class="recommendation-item ${type}" data-pair="${rec.pair}">
+                <div class="recommendation-item-left">
+                    <div class="recommendation-rank">${index + 1}</div>
+                    <div class="recommendation-info">
+                        <div class="recommendation-name">${getCryptoName(rec.pair)}</div>
+                        <div class="recommendation-reason">${rec.reasons.join(' / ')}</div>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                    <div class="recommendation-score">
+                        <span class="score-badge ${strengthClass}">スコア: ${rec.score} (${strengthText})</span>
+                    </div>
+                    <div class="recommendation-price">${formatPrice(rec.price, rec.pair)}</div>
+                    <div class="recommendation-change ${changeClass}">
+                        ${changeSymbol}${rec.priceChange.toFixed(2)}%
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function updateStatusOverview(status, text) {
+    const statusBadge = document.getElementById('statusBadgeOverview');
+    const statusText = document.getElementById('statusTextOverview');
+    
+    if (statusBadge && statusText) {
+        statusBadge.className = `status-badge ${status}`;
+        statusText.textContent = text;
+    }
 }
